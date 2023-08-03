@@ -30,12 +30,46 @@ async function run() {
     const usersCollection = client.db("admissionDb").collection("user");
     const admissionsCollection = client.db("admissionDb").collection("admission");
 
-    app.post('/admissions', async (req, res) => {
+    // // API to handle admission form data insertion
+
+    app.post("/admissions", async (req, res) => {
       const data = req.body;
-      console.log("Received data:", data); // Add this line to log the received data
-      const result = await admissionsCollection.insertOne(data);
-      res.send(result);
+      const collegeId = req.query.collegeId; 
+      const admission = {
+        ...data,
+        collegeId: collegeId, // Save collegeId in the admission object
+      };
+      console.log("Admission object:", admission);
+      const result = await admissionsCollection.insertOne(admission);
+      console.log("Result:", result);
+      res.send({ insertedId: result.insertedId });
     });
+
+    // app.post("/admissions", async (req, res) => {
+    //   const data = req.body;
+    //   collegeId = data.collegeId;
+    //   const admission = {
+    //     ...data,
+    //     collegeId: collegeId,
+    //   };
+    //   console.log("Admission object:", admission); 
+    //   const result = await admissionsCollection.insertOne(admission);
+    //   console.log("Result:", result);
+    //   res.send({ insertedId: result.insertedId });
+    // });
+    
+    // app.post("/admissions", async(req, res)=>{
+    //   const data= req.body;
+    //   const collegeId =req.query.collegeId;
+    //   data.collegeId= collegeId;
+    //   const admission = {
+    //     ...data,
+    //     collegeId: collegeId,
+    //   };
+    //   const result = await admissionsCollection.insertOne(admission);
+    //   res.send({insertedId:result.insertedId,});
+    // })
+
 
     // Save user email and role in DB
     app.put("/users/:email", async (req, res) => {
@@ -56,35 +90,23 @@ async function run() {
       res.send(result);
     });
 
-    //  View detail from all college details page there are some error
 
-    //  app.get('/college/:id', async (req, res) => {
-    //     const id = req.params.id;
-    //     console.log('I wanna see data for id', id);
-    //     const query = { _id: new ObjectId(id) };
-    //     const result = await collegeCollection.findOne(query);
-    //     res.send(result);
-    //   });
-
-    //  View detail from all college
-
-    app.get("/college/:id", async (req, res) => {
+    // View college details by ID
+    app.get ('/college/:id', async (req, res)=>{
       const id = req.params.id;
-      try {
-        if (!ObjectId.isValid(id)) {
-          return res.status(400).json({ error: "Invalid college ID" });
-        }
-        const query = { _id: new ObjectId(id) };
-        const result = await collegeCollection.findOne(query);
-        if (!result) {
-          return res.status(404).json({ error: "College not found" });
-        }
-        res.json(result);
-      } catch (err) {
-        console.error("Error fetching college details:", err);
-        res.status(500).json({ error: "Something went wrong" });
-      }
+      const query = {_id: new ObjectId(id)};
+      const result = await collegeCollection.findOne(query);
+      res.json(result);
     });
+
+    // view college details and admission by ID
+    app.get('/admission/:id', async (req, res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await collegeCollection.findOne(query);
+      res.send(result);
+    });
+ 
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

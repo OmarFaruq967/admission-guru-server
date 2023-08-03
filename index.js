@@ -32,16 +32,16 @@ async function run() {
 
     // // API to handle admission form data insertion
 
-    app.post("/admissions", async (req, res) => {
+    app.post('/admissions', async (req, res) => {
       const data = req.body;
-      const collegeId = req.query.collegeId; 
+      const collegeId = req.query.collegeId;
       const admission = {
         ...data,
         collegeId: collegeId, // Save collegeId in the admission object
       };
-      console.log("Admission object:", admission);
+      console.log('Admission object:', admission);
       const result = await admissionsCollection.insertOne(admission);
-      console.log("Result:", result);
+      console.log('Result:', result);
       res.send({ insertedId: result.insertedId });
     });
 

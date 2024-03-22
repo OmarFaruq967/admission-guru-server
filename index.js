@@ -5,7 +5,6 @@ const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 
-
 //middleware
 app.use(cors());
 app.use(express.json());
@@ -59,7 +58,7 @@ async function run() {
     //   res.send(result);
     // });
 
-      //admission query by email
+    //admission query by email
     // app.get("/admissions", async (req, res) => {
     //   try {
     //     console.log(req.query.email);
@@ -75,7 +74,7 @@ async function run() {
     //     res.status(500).send("Internal Server Error");
     //   }
     // });
-    
+
     app.get("/admissions", async (req, res) => {
       try {
         console.log(req.query.email);
@@ -85,9 +84,11 @@ async function run() {
           query = { email: req.query.email };
         }
         const admissions = await admissionsCollection.find(query).toArray();
-    
+
         // Fetch college details for each admission
-        const collegeIds = admissions.map((admission) => admission.collegeId?.toString());
+        const collegeIds = admissions.map((admission) =>
+          admission.collegeId?.toString()
+        );
         const colleges = await Promise.all(
           collegeIds
             .filter((collegeId) => collegeId) // Filter out undefined or falsy values
@@ -96,25 +97,26 @@ async function run() {
               return collegeDetails;
             })
         );
-    
+
         // Combine admission data with college details
         const admissionsWithColleges = admissions.map((admission, index) => ({
           ...admission,
           college: colleges[index],
         }));
-    
+
         res.send(admissionsWithColleges);
       } catch (error) {
         console.error("Error fetching admissions:", error);
         res.status(500).send("Internal Server Error");
       }
     });
-    
-    
+
     // Helper function to fetch college details by collegeId
     const fetchCollegeDetails = async (collegeId) => {
       try {
-        const response = await fetch(`http://localhost:5000/college/${collegeId}`); // Replace with your actual API endpoint
+        const response = await fetch(
+          `http://localhost:5000/college/${collegeId}`
+        ); // Replace with your actual API endpoint
         const data = await response.json();
         return data;
       } catch (error) {
@@ -122,8 +124,6 @@ async function run() {
         throw error;
       }
     };
-    
-
 
     // app.post("/admissions", async (req, res) => {
     //   const data = req.body;
@@ -151,16 +151,40 @@ async function run() {
     // })
 
     // Save user email and role in DB
-    app.put("/users/:email", async (req, res) => {
-      const email = req.params.email;
-      const user = req.body;
-      const query = { email: email };
-      const options = { upsert: true };
-      const updateDoc = {
-        $set: user,
-      };
-      const result = await usersCollection.updateOne(query, updateDoc, options);
-      res.send(result);
+    // app.put("/users/:email", async (req, res) => {
+    //   const email = req.params.email;
+    //   const user = req.body;
+    //   const query = { email: email };
+    //   const options = { upsert: true };
+    //   const updateDoc = {
+    //     $set: user,
+    //   };
+    //   const result = await usersCollection.updateOne(query, updateDoc, options);
+    //   res.send(result);
+    // });
+    // update college data by ID
+
+    app.put("/user/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const adCollegeId = req.body;
+        const query = { _id: new ObjectId(email) };
+        const options = { upsert: true };
+        const admissionCollege = {
+          $addToSet: {
+            admission: { $each: adCollegeId },
+          },
+        };
+        const result = await usersCollection.updateOne(
+          query,
+          admissionCollege,
+          options
+        );
+        res.json(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal Server Error" });
+      }
     });
 
     //College collection API
@@ -176,6 +200,26 @@ async function run() {
       const result = await collegeCollection.findOne(query);
       res.json(result);
     });
+
+    // update college data by ID
+    // app.put("/user/:id", async (req, res) => {
+    //   try {
+    //     const id = req.params.id;
+    //     const colleges = req.body;
+    //     const query = { _id: new ObjectId(id) };
+    //     const options = { upsert: true };
+    //     const updateCollege = {
+    //       $set: {
+    //         admission: true,
+    //       },
+    //     };
+    //     const result = await usersCollection.updateOne(query, updateCollege, options);
+    //     res.json(result);
+    //   } catch (error) {
+    //     console.error(error);
+    //     res.status(500).json({ error: 'Internal Server Error' });
+    //   }
+    // });
 
     // view college details and admission by ID
     app.get("/admission/:id", async (req, res) => {

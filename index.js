@@ -47,6 +47,22 @@ async function run() {
       res.send({ insertedId: result.insertedId });
     });
 
+
+    //user save in database
+    app.post("/user", async (req, res) => {
+    const data = req.body;
+    console.log("data", data)
+    const existingUser= await usersCollection.findOne({email: data.email})
+    if(existingUser){
+     return res.status(400).send({messages:"user already exist"});
+    }
+   else{
+    const result = await usersCollection.insertOne(data);
+    //  console.log("hit" , result);
+     res.send({ insertedId: result.insertedId });
+   }
+    });
+
     //admission query by email
     // app.get("/admissions", async (req, res) => {
     //   console.log(req.query.email);
@@ -77,7 +93,7 @@ async function run() {
 
     app.get("/admissions", async (req, res) => {
       try {
-        console.log(req.query.email);
+        // console.log(req.query.email);
         const admission = req.body;
         let query = {};
         if (req.query?.email) {
@@ -124,6 +140,16 @@ async function run() {
         throw error;
       }
     };
+
+
+    //delete admission
+    app.delete("/remove/:id", async (req, res) => {
+      console.log(req.params);
+      const result = await admissionsCollection.deleteOne({ 
+        _id: new ObjectId(req.params.id), });
+        res.send(result);
+    });
+
 
     // app.post("/admissions", async (req, res) => {
     //   const data = req.body;
@@ -228,6 +254,9 @@ async function run() {
       const result = await collegeCollection.findOne(query);
       res.send(result);
     });
+
+    
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
